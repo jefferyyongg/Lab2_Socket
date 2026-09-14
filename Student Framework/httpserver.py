@@ -53,16 +53,7 @@ def build_response(status, body=b"", content_type="text/html", set_cookies="nns2
     )
     return header.encode("utf-8") + body
 
-# This is just an example of how you could implement the server. You may change
-# this however you wish.
-# For example, you could do a really nice object oriented version if you like.
-
-def serve(port, public_html):
-    """
-    The entry point of the HTTP server.
-    port: The port to listen on.
-    public_html: The directory where all static files are stored.
-    """
+def create_socket(port):
     # setup socket
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     """
@@ -80,6 +71,90 @@ def serve(port, public_html):
     # once accept is called, the client leaves the queue and the slot free's up for the next client
     s.listen(0)
 
+    return s
+
+def receive_request(client_socket):
+    # empty bytes litteral
+    buffer = b""
+    while True:
+        request = client_socket.recv(1024) #buffer length
+
+        # if received request isn't eof then add to buffer
+        if "\r\n\r\n" not in request.decode("utf-8"):
+            buffer += request
+        else:
+            buffer += request
+            break
+
+    return buffer.decode("utf-8") # decode entire message/header as bytes into string
+
+def parse_request(buffer):
+    # split header part of buffer(method, path, version)
+    split_buffer = buffer.split("\r\n", 1)
+
+    # end of split gets appended as one string -> our body
+    client_request = split_buffer[0].split(" ", 2)
+    client_body = split_buffer[1]
+
+    request_method = client_request[0]
+    request_path = client_request[1]
+    request_version = client_request[2]
+
+    return request_method, request_path, request_version, client_body
+
+def handle_get(request_path, public_html, client_body):
+    increment_cookies = False
+    if request_path == "/" or "/index.html" in request_path:
+        request_path = "/index.html"
+        increment_cookies = True
+
+    # format and join path with ./public_html
+    safe_path = os.path.normpath(request_path).lstrip("/\\")
+    file_path = os.path.join(public_html, safe_path)
+
+    try:
+        with open(file_path, "rb") as f:
+            body = f.read()
+
+        content_type = mimetypes.guess_type(file_path)[0]
+        print(cookiesExists(client_body))
+        if cookiesExists(client_body):
+            if increment_cookies:
+                return build_response("200 OK", body, content_type, updateCookies(client_body))
+            else:
+                return build_response("200 OK", body, content_type, keepCurrentCookieCount(client_body))
+        else:
+            return build_response("200 OK", body, content_type)
+
+    except FileNotFoundError:
+        return build_response("404 Not Found", b"404 Not Found", "text/plain")
+
+def handle_client(client_socket, public_html):
+    buffer = receive_request(client_socket)
+    request_method, request_path, request_version, client_body = parse_request(buffer)
+
+    # close when client exits
+    if request_method.lower() != "get":
+        # close socket on server side and break out of the infinite loop
+        response = build_response("501 Not Implemented", b"501 Not Implemented", "text/plain")
+    else:
+        response = handle_get(request_path, public_html, client_body)
+
+    client_socket.sendall(response)
+    client_socket.close()
+
+# This is just an example of how you could implement the server. You may change
+# this however you wish.
+# For example, you could do a really nice object oriented version if you like.
+
+def serve(port, public_html):
+    """
+    The entry point of the HTTP server.
+    port: The port to listen on.
+    public_html: The directory where all static files are stored.
+    """
+    s = create_socket(port)
+
     while True:
         # stalls execution thread until client connects -> then returns a pair of (conn, addr) tuple
         # address is tuple of clients IP: [0] and port: [1]
@@ -87,66 +162,7 @@ def serve(port, public_html):
         client_socket, client_address = s.accept()
         print(f"Accepted connection from: {client_address[0]} to: {client_address[1]}")
 
-        # empty bytes litteral
-        buffer = b""
-        while True:
-            request = client_socket.recv(1024) #buffer length
-
-            # if received request isn't eof then add to buffer
-            if "\r\n\r\n" not in request.decode("utf-8"):
-                buffer += request
-            else:
-                buffer += request
-                break
-
-        buffer = buffer.decode("utf-8") # decode entire message/header as bytes into string
-
-        # split header part of buffer(method, path, version)
-        split_buffer = buffer.split("\r\n", 1)
-
-        # end of split gets appended as one string -> our body
-        client_request = split_buffer[0].split(" ", 2)
-        client_body = split_buffer[1]
-
-        request_method = client_request[0]
-        request_path = client_request[1]
-        request_version = client_request[2]
-
-        # close when client exits
-        if request_method.lower() != "get":
-            # close socket on server side and break out of the infinite loop
-            response = build_response("501 Not Implemented", b"501 Not Implemented", "text/plain")
-            client_socket.sendall(response)
-            client_socket.close()
-        else:
-            increment_cookies = False
-            if request_path == "/" or "/index.html" in request_path:
-                request_path = "/index.html"
-                increment_cookies = True
-
-            # format and join path with ./public_html
-            safe_path = os.path.normpath(request_path).lstrip("/\\")
-            file_path = os.path.join(public_html, safe_path)
-
-            try:
-                with open(file_path, "rb") as f:
-                    body = f.read()
-
-                content_type = mimetypes.guess_type(file_path)[0]
-                print(cookiesExists(client_body))
-                if cookiesExists(client_body):
-                    if increment_cookies:
-                        response = build_response("200 OK", body, content_type, updateCookies(client_body))
-                    else:
-                        response = build_response("200 OK", body, content_type, keepCurrentCookieCount(client_body))
-                else:
-                    response = build_response("200 OK", body, content_type)
-
-            except FileNotFoundError:
-                response = build_response("404 Not Found", b"404 Not Found", "text/plain")
-
-            client_socket.sendall(response)
-            client_socket.close()
+        handle_client(client_socket, public_html)
 
 # This the entry point of the script.
 # Do not change this part.
