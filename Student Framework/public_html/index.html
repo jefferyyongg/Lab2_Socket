@@ -1,66 +1,65 @@
 <html>
-
-<head>
+  <head>
     <title>NNS26 Socket Lab Chat Room</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-<body>
+  <body>
     <h1>NNS26 Socket Lab Chat Room</h1>
     <div class="box screenshot">
-        <img src="screenshot.png" width="100%" alt="Chat client screenshot">
-        If you can see the screenshot, multiple sequential connections are working
+      <img src="screenshot.png" width="100%" alt="Chat client screenshot" />
+      If you can see the screenshot, multiple sequential connections are working
     </div>
     <div class="wrapper">
-        <div class="box test">
-            <h2>Test Status</h2>
-            <a class="button" href="/archive-2024.html">Test 404</a>
-            <form action="/messages" method="post">
-                <input class="button" type="submit" value="501">
-            </form>
-            <a class="button" href="/index.html?edition=2026">Reload 2026 edition</a>
-        </div>
-        <div class="box download">
-            <h2>Chat Downloads</h2>
-            <a class="button" href="/client.py">Download client</a>
-            <a class="button" href="/gui.py">Download GUI</a>
-        </div>
+      <div class="box test">
+        <h2>Test Status</h2>
+        <a class="button" href="/archive-2024.html">Test 404</a>
+        <form action="/messages" method="post">
+          <input class="button" type="submit" value="501" />
+        </form>
+        <a class="button" href="/index.html?edition=2026"
+          >Reload 2026 edition</a
+        >
+      </div>
+      <div class="box download">
+        <h2>Chat Downloads</h2>
+        <a class="button" href="/client.py">Download client</a>
+        <a class="button" href="/gui.py">Download GUI</a>
+      </div>
     </div>
     <footer>
-        You have visited this page <span id="visit_counter">? times</span>!
+      You have visited this page <span id="visit_counter">? times</span>!
     </footer>
-</body>
+  </body>
 
-<script>
+  <script>
     function getCookie(cname) {
-        let name = cname + "=";
-        let decodedCookie = decodeURIComponent(document.cookie);
-        let ca = decodedCookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) == ' ') {
-                c = c.substring(1);
-            }
-            if (c.indexOf(name) == 0) {
-                return c.substring(name.length, c.length);
-            }
+      let name = cname + "=";
+      let decodedCookie = decodeURIComponent(document.cookie);
+      let ca = decodedCookie.split(";");
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == " ") {
+          c = c.substring(1);
         }
-        return "";
+        if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+        }
+      }
+      return "";
     }
 
     try {
-        var visits = getCookie('nns26-visit-count');
-        console.log(visits);
-        console.log(document.getElementById("visit_counter"));
-        var ts = " time";
-        if(visits > 1) {
-            ts = " times";
-        }
-        document.getElementById("visit_counter").innerHTML = visits + ts;
+      var visits = getCookie("nns26-visit-count");
+      console.log(visits);
+      console.log(document.getElementById("visit_counter"));
+      var ts = " time";
+      if (visits > 1) {
+        ts = " times";
+      }
+      document.getElementById("visit_counter").innerHTML = visits + ts;
+    } catch (err) {
+      console.log(err);
     }
-    catch (err) {
-        console.log(err)
-    }
-</script>
-
+  </script>
 </html>
